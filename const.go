@@ -3,11 +3,11 @@ package whirlpool
 const (
 	rounds      = 10
 	lengthBytes = 32
-	lengthBits  = 8 * lengthbytes
+	lengthBits  = 8 * lengthBytes
 	digestBytes = 64
-	digestBits  = 8 * digestbytes
+	digestBits  = 8 * digestBytes
 	wblockBytes = 64
-	wblockBits  = 8 * wblockbytes
+	wblockBits  = 8 * wblockBytes
 )
 
 const C0 [256]uint64 = slice{

@@ -9,7 +9,7 @@ type whirlpool struct {
 }
 
 func NewWhirlpool() (w *whirlpool) {
-	w.buffer = make([]uint8, wblockbytes)
+	w.buffer = make([]uint8, wblockBytes)
 	return
 }
 
