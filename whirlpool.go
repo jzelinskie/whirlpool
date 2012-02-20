@@ -1,20 +1,31 @@
 package whirlpool
 
+import "hash"
+
 type whirlpool struct {
-	bitLength  [lengthBytes]uint8
-	buffer     []uint8
+	bitLength  [lengthBytes]byte
+	buffer     [wblockBytes]byte
 	bufferBits int
 	bubfferPos int
 	hash       [digestBytes / 8]uint64
 }
 
-func NewWhirlpool() (w *whirlpool) {
-	w.buffer = make([]uint8, wblockBytes)
-	return
+func NewWhirlpool() hash.Hash {
+	d := new(whirlpool)
+	d.Reset()
+	return d
 }
 
 func (w *whirlpool) Reset() {
 	//TODO implement!
+}
+
+func (w *whirlpool) Size() int {
+	return digestBytes
+}
+
+func (w *whirlpool) BlockSize() int {
+	return digestBytes
 }
 
 func (w *whirlpool) processBuffer() {
@@ -217,11 +228,11 @@ func (w *whirlpool) processBuffer() {
 	}
 }
 
-func (w *whirlpool) Add(source []byte) {
+func (w *whirlpool) Write(source []byte) {
 	var (
 		sourcePos  int
 		sourceGap  int    = 8 - (int(sourceBits&7))&7
-		sourceBits uint8  = uint8(source)
+		sourceBits uint32 = uint32()
 		bufferRem  int    = w.bufferBits & 7
 		value      uint64 = sourceBits
 		b          uint32
@@ -290,8 +301,8 @@ func (w *whirlpool) Add(source []byte) {
 	}
 }
 
-func (w *whirlpool) Sum() []byte {
-	var digest *uint8
+func (w *whirlpool) Sum(in []byte) []byte {
+	var digest *[]byte
 
 	// copy the whirlpool so that the caller can keep summing
 	n := *w
@@ -322,7 +333,7 @@ func (w *whirlpool) Sum() []byte {
 	// process data block
 	n.processBuffer()
 
-	// return the final digest
+	// return the final digest as []byte
 	for i := 0; i < digestBytes/8; i++ {
 		digest[0] = uint8(n.hash[i] >> 56)
 		digest[1] = uint8(n.hash[i] >> 48)
@@ -335,5 +346,5 @@ func (w *whirlpool) Sum() []byte {
 		digest += 8
 	}
 
-	return []byte(digest)
+	return append(in, digest[:lengthBytes])
 }
