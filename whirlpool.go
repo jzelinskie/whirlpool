@@ -39,7 +39,7 @@ func (w *whirlpool) processBuffer() {
 	}
 
 	// compute & apply K^0 to cipher state
-	for i, _ := range state {
+	for i := 0; i < 8; i++ {
 		K[i] = w.hash[i]
 		state[i] = block[i] ^ K[i]
 	}
@@ -121,7 +121,7 @@ func (w *whirlpool) processBuffer() {
 			C6[int((K[1]>>8)&0xff)] ^
 			C7[int(K[0]&0xff)])
 
-		for i, _ := range K {
+		for i := 0; i < 8; i++ {
 			K[i] = L[i]
 		}
 
@@ -206,12 +206,12 @@ func (w *whirlpool) processBuffer() {
 			C7[int(state[0]&0xff)]) ^
 			K[7]
 
-		for i, _ := range state {
+		for i := 0; i < 8; i++ {
 			state[i] = L[i]
 		}
 
 		// apply miyaguchi-preneel compression function
-		for i, _ := range w.hash {
+		for i := 0; i < 8; i++ {
 			w.hash[i] ^= state[i] ^ block[i]
 		}
 	}
