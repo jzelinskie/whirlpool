@@ -43,16 +43,17 @@ func (w *whirlpool) processBuffer() {
 	)
 
 	// map buffer to a block
-	for i := 0; i < 8; w.buffer += 8 {
+	for i := 0; i < 8; i++ {
+		k := 8 * i
 
-		block[i] = ((uint64(w.buffer[0]) << 56) ^
-			(uint64(w.buffer[1]) & 0xff << 48) ^
-			(uint64(w.buffer[2]) & 0xff << 40) ^
-			(uint64(w.buffer[3]) & 0xff << 32) ^
-			(uint64(w.buffer[4]) & 0xff << 24) ^
-			(uint64(w.buffer[5]) & 0xff << 16) ^
-			(uint64(w.buffer[6]) & 0xff << 8) ^
-			(uint64(w.buffer[7]) & 0xff))
+		block[i] = ((uint64(w.buffer[k+0]) << 56) ^
+			(uint64(w.buffer[k+1]) & 0xff << 48) ^
+			(uint64(w.buffer[k+2]) & 0xff << 40) ^
+			(uint64(w.buffer[k+3]) & 0xff << 32) ^
+			(uint64(w.buffer[k+4]) & 0xff << 24) ^
+			(uint64(w.buffer[k+5]) & 0xff << 16) ^
+			(uint64(w.buffer[k+6]) & 0xff << 8) ^
+			(uint64(w.buffer[k+7]) & 0xff))
 	}
 
 	// compute & apply K^0 to cipher state
