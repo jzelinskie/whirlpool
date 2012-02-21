@@ -6,7 +6,7 @@ type whirlpool struct {
 	bitLength  [lengthBytes]byte
 	buffer     [wblockBytes]byte
 	bufferBits int
-	bubfferPos int
+	bufferPos  int
 	hash       [digestBytes / 8]uint64
 }
 
@@ -17,7 +17,13 @@ func NewWhirlpool() hash.Hash {
 }
 
 func (w *whirlpool) Reset() {
-	//TODO implement!
+	w.bufferBits = 0
+	w.bufferPos = 0
+	w.buffer[0] = 0 // only necessary to clean bufferPos
+	for i := 0; i < 8; i++ {
+		w.hash[i] = 0
+	}
+
 }
 
 func (w *whirlpool) Size() int {
@@ -228,11 +234,13 @@ func (w *whirlpool) processBuffer() {
 	}
 }
 
-func (w *whirlpool) Write(source []byte) {
+func (w *whirlpool) Write(source []byte) (nn int, err error) {
+	nn = len(source)
+
 	var (
 		sourcePos  int
+		sourceBits uint32 = uint32(len(source) * 8)
 		sourceGap  int    = 8 - (int(sourceBits&7))&7
-		sourceBits uint32 = uint32()
 		bufferRem  int    = w.bufferBits & 7
 		value      uint64 = sourceBits
 		b          uint32
