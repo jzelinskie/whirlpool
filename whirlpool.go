@@ -3,11 +3,11 @@ package whirlpool
 import "hash"
 
 type whirlpool struct {
-	bitLength  [lengthBytes]byte
-	buffer     [wblockBytes]byte
-	bufferBits int
-	bufferPos  int
-	hash       [digestBytes / 8]uint64
+	bitLength  [lengthBytes]byte       // number of hashed bits
+	buffer     [wblockBytes]byte       // buffer of data to be hashed
+	bufferBits int                     // current number of bits on the buffer
+	bufferPos  int                     // current byte location on buffer
+	hash       [digestBytes / 8]uint64 // hash state
 }
 
 func NewWhirlpool() hash.Hash {
@@ -17,13 +17,16 @@ func NewWhirlpool() hash.Hash {
 }
 
 func (w *whirlpool) Reset() {
+	// cleanup buffer
 	w.bufferBits = 0
 	w.bufferPos = 0
 	w.buffer[0] = 0 // only necessary to clean bufferPos
-	for i := 0; i < 8; i++ {
-		w.hash[i] = 0
-	}
 
+	// cleanup digest
+	w.hash = [digestBytes / 8]uint64{}
+
+	// clean number of hashed bits
+	w.bitLength = [lengthBytes]byte{}
 }
 
 func (w *whirlpool) Size() int {
@@ -31,7 +34,7 @@ func (w *whirlpool) Size() int {
 }
 
 func (w *whirlpool) BlockSize() int {
-	return digestBytes
+	return wblockBytes
 }
 
 func (w *whirlpool) transform() {
@@ -45,7 +48,6 @@ func (w *whirlpool) transform() {
 	// map buffer to a block
 	for i := 0; i < 8; i++ {
 		b := 8 * i
-
 		block[i] = ((uint64(w.buffer[b]) << 56) ^
 			(uint64(w.buffer[b+1]) & 0xff << 48) ^
 			(uint64(w.buffer[b+2]) & 0xff << 40) ^
@@ -322,7 +324,10 @@ func (w *whirlpool) Sum(in []byte) []byte {
 	// pad with 0 bits
 	if n.bufferPos > wblockBytes-lengthBytes {
 		if n.bufferPos < wblockBytes {
-			//TODO memset
+			for n.bufferPos < wblockBytes-lengthBytes {
+				n.buffer[BufferPos] = 0
+				n.bufferPos++
+			}
 		}
 		// process data block
 		n.transform()
@@ -331,12 +336,18 @@ func (w *whirlpool) Sum(in []byte) []byte {
 	}
 
 	if n.bufferPos < wblockBytes-lengthBytes {
-		//TODO memset
+		for n.BufferPos < (wblockBytes - lengthBytes - n.bufferPos) {
+			n.buffer[n.bufferPos] = 0
+			n.bufferPos++
+		}
 	}
 	n.bufferPos = wblockBytes - lengthBytes
 
 	// append bit length of hashed data
-	//TODO memcpy
+	for i := 0; n.bufferPos < wblockBytes; i++ {
+		n.buffer[bufferPos] = n.bitLength[i]
+		n.bufferPos++
+	}
 
 	// process data block
 	n.transform()

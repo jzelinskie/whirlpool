@@ -16,4 +16,4 @@ a whirlpool hashing library for go
 
 ## license
 
-none atm
+not until it works
