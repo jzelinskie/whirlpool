@@ -46,7 +46,7 @@ func (w *whirlpool) processBuffer() {
 	for i := 0; i < 8; i++ {
 		b := 8 * i
 
-		block[i] = ((uint64(w.buffer[k]) << 56) ^
+		block[i] = ((uint64(w.buffer[b]) << 56) ^
 			(uint64(w.buffer[b+1]) & 0xff << 48) ^
 			(uint64(w.buffer[b+2]) & 0xff << 40) ^
 			(uint64(w.buffer[b+3]) & 0xff << 32) ^
