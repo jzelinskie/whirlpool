@@ -34,11 +34,11 @@ func (w *whirlpool) BlockSize() int {
 	return digestBytes
 }
 
-func (w *whirlpool) processBuffer() {
+func (w *whirlpool) transform() {
 	var (
-		K     [8]uint64
-		block [8]uint64
-		state [8]uint64
+		K     [8]uint64 // round key
+		block [8]uint64 // mu(buffer)
+		state [8]uint64 // cipher state
 		L     [8]uint64
 	)
 
@@ -64,7 +64,6 @@ func (w *whirlpool) processBuffer() {
 
 	// iterate over all rounds
 	for r := 1; r <= rounds; r++ {
-
 		// compute K^rounds from K^(rounds-1)
 		L[0] = (C0[int(K[0]>>56)] ^
 			C1[int((K[7]>>48)&0xff)] ^
@@ -143,7 +142,7 @@ func (w *whirlpool) processBuffer() {
 			K[i] = L[i]
 		}
 
-		// apply the round transformation
+		// apply round-th round transformation
 		L[0] = (C0[int(state[0]>>56)] ^
 			C1[int((state[7]>>48)&0xff)] ^
 			C2[int((state[6]>>40)&0xff)] ^
@@ -151,8 +150,8 @@ func (w *whirlpool) processBuffer() {
 			C4[int((state[4]>>24)&0xff)] ^
 			C5[int((state[3]>>16)&0xff)] ^
 			C6[int((state[2]>>8)&0xff)] ^
-			C7[int(state[1]&0xff)]) ^
-			K[0]
+			C7[int(state[1]&0xff)] ^
+			K[0])
 
 		L[1] = (C0[int(state[1]>>56)] ^
 			C1[int((state[0]>>48)&0xff)] ^
@@ -161,8 +160,8 @@ func (w *whirlpool) processBuffer() {
 			C4[int((state[5]>>24)&0xff)] ^
 			C5[int((state[4]>>16)&0xff)] ^
 			C6[int((state[3]>>8)&0xff)] ^
-			C7[int(state[2]&0xff)]) ^
-			K[1]
+			C7[int(state[2]&0xff)] ^
+			K[1])
 
 		L[2] = (C0[int(state[2]>>56)] ^
 			C1[int((state[1]>>48)&0xff)] ^
@@ -171,8 +170,8 @@ func (w *whirlpool) processBuffer() {
 			C4[int((state[6]>>24)&0xff)] ^
 			C5[int((state[5]>>16)&0xff)] ^
 			C6[int((state[4]>>8)&0xff)] ^
-			C7[int(state[3]&0xff)]) ^
-			K[2]
+			C7[int(state[3]&0xff)] ^
+			K[2])
 
 		L[3] = (C0[int(state[3]>>56)] ^
 			C1[int((state[2]>>48)&0xff)] ^
@@ -181,8 +180,8 @@ func (w *whirlpool) processBuffer() {
 			C4[int((state[7]>>24)&0xff)] ^
 			C5[int((state[6]>>16)&0xff)] ^
 			C6[int((state[5]>>8)&0xff)] ^
-			C7[int(state[4]&0xff)]) ^
-			K[3]
+			C7[int(state[4]&0xff)] ^
+			K[3])
 
 		L[4] = (C0[int(state[4]>>56)] ^
 			C1[int((state[3]>>48)&0xff)] ^
@@ -191,8 +190,8 @@ func (w *whirlpool) processBuffer() {
 			C4[int((state[0]>>24)&0xff)] ^
 			C5[int((state[7]>>16)&0xff)] ^
 			C6[int((state[6]>>8)&0xff)] ^
-			C7[int(state[5]&0xff)]) ^
-			K[4]
+			C7[int(state[5]&0xff)] ^
+			K[4])
 
 		L[5] = (C0[int(state[5]>>56)] ^
 			C1[int((state[4]>>48)&0xff)] ^
@@ -201,8 +200,8 @@ func (w *whirlpool) processBuffer() {
 			C4[int((state[1]>>24)&0xff)] ^
 			C5[int((state[0]>>16)&0xff)] ^
 			C6[int((state[7]>>8)&0xff)] ^
-			C7[int(state[6]&0xff)]) ^
-			K[5]
+			C7[int(state[6]&0xff)] ^
+			K[5])
 
 		L[6] = (C0[int(state[6]>>56)] ^
 			C1[int((state[5]>>48)&0xff)] ^
@@ -211,8 +210,8 @@ func (w *whirlpool) processBuffer() {
 			C4[int((state[2]>>24)&0xff)] ^
 			C5[int((state[1]>>16)&0xff)] ^
 			C6[int((state[0]>>8)&0xff)] ^
-			C7[int(state[7]&0xff)]) ^
-			K[6]
+			C7[int(state[7]&0xff)] ^
+			K[6])
 
 		L[7] = (C0[int(state[7]>>56)] ^
 			C1[int((state[6]>>48)&0xff)] ^
@@ -221,8 +220,8 @@ func (w *whirlpool) processBuffer() {
 			C4[int((state[3]>>24)&0xff)] ^
 			C5[int((state[2]>>16)&0xff)] ^
 			C6[int((state[1]>>8)&0xff)] ^
-			C7[int(state[0]&0xff)]) ^
-			K[7]
+			C7[int(state[0]&0xff)] ^
+			K[7])
 
 		for i := 0; i < 8; i++ {
 			state[i] = L[i]
@@ -241,14 +240,14 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 	var (
 		sourcePos  int
 		sourceBits uint32 = uint32(len(source) * 8)
-		sourceGap  int    = 8 - (int(sourceBits&7))&7
-		bufferRem  int    = w.bufferBits & 7
-		value      uint64 = sourceBits
+		sourceGap  uint   = uint(8 - (int(sourceBits&7))&7)
+		bufferRem  uint   = uint(w.bufferBits & 7)
+		value      uint64 = uint64(sourceBits)
 		b          uint32
 	)
 
 	for i, carry := 31, uint32(0); i >= 0 && (carry != 0 || value != 0); i-- {
-		carry += w.bitLength[i] + (uint32(value & 0xff))
+		carry += uint32(w.bitLength[i]) + (uint32(value & 0xff))
 		w.bitLength[i] = uint8(carry)
 		carry >>= 8
 		value >>= 8
@@ -258,7 +257,7 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 	for sourceBits > 8 {
 		// take a byte form the source
 		b = (((source[sourcePos] << sourceGap) & 0xff) |
-			((source[sourcePost+1] & 0xff) >> (8 - sourceGap)))
+			((source[sourcePos+1] & 0xff) >> (8 - sourceGap)))
 
 		// process this byte
 		w.bufferPos++
@@ -266,7 +265,7 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 		w.bufferBits += 8 - bufferRem
 		if w.bufferBits == digestBits {
 			// process this block
-			w.processBuffer()
+			w.transform()
 
 			// reset the buffer
 			w.bufferBits = 0
@@ -299,11 +298,11 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 		// now 0 <= sourceBits <= 8; all data leftover is in source[sourcePos]
 		if w.bufferBits == digestBits {
 			// process data block
-			w.processBuffer()
+			w.transform()
 
 			// reset buffer
 			w.bufferBits = 0
-			w.bufferPost = 0
+			w.bufferPos = 0
 		}
 		w.buffer[w.bufferPos] = uint8(b << (8 - bufferRem))
 		w.bufferBits += int(sourceBits)
@@ -326,7 +325,7 @@ func (w *whirlpool) Sum(in []byte) []byte {
 			//TODO memset
 		}
 		// process data block
-		n.processBuffer()
+		n.transform()
 		// reset buffer
 		n.bufferPos = 0
 	}
@@ -340,7 +339,7 @@ func (w *whirlpool) Sum(in []byte) []byte {
 	//TODO memcpy
 
 	// process data block
-	n.processBuffer()
+	n.transform()
 
 	// return the final digest as []byte
 	for i := 0; i < digestBytes/8; i++ {
