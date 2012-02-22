@@ -12,7 +12,6 @@ type whirlpool struct {
 
 func NewWhirlpool() hash.Hash {
 	d := new(whirlpool)
-	d.Reset()
 	return d
 }
 
