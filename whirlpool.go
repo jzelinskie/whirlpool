@@ -60,8 +60,8 @@ func (w *whirlpool) transform() {
 
 	// compute & apply K^0 to cipher state
 	for i := 0; i < 8; i++ {
-		K[i] = w.hash[i]
 		state[i] = block[i] ^ K[i]
+		w.hash[i] = state[i]
 	}
 
 	// iterate over all rounds
