@@ -239,12 +239,12 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 	nn = len(source)
 
 	var (
-		sourcePos  int                                     // index of the leftmost source
-		sourceBits uint32 = uint32(len(source) * 8)        // num of bits to process
-		sourceGap  int    = int(8 - (int(sourceBits&7))&7) // space on source[sourcePos]
-		bufferRem  int    = int(w.bufferBits & 7)          // occupied bits on buffer[bufferPos]
+		sourcePos  int                                      // index of the leftmost source
+		sourceBits uint32 = uint32(len(source) * 8)         // num of bits to process
+		sourceGap  uint   = uint(8 - (int(sourceBits&7))&7) // space on source[sourcePos]
+		bufferRem  uint   = uint(w.bufferBits & 7)          // occupied bits on buffer[bufferPos]
 		value      uint64 = uint64(sourceBits)
-		b          uint32
+		b          byte
 	)
 
 	// tally length of data added
@@ -264,7 +264,7 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 		// process this byte
 		w.bufferPos++
 		w.buffer[w.bufferPos] |= uint8(b >> bufferRem)
-		w.bufferBits += 8 - bufferRem
+		w.bufferBits += int(8 - bufferRem)
 
 		if w.bufferBits == digestBits {
 			// process this block
@@ -274,7 +274,7 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 			w.bufferPos = 0
 		}
 		w.buffer[w.bufferPos] = uint8(b << (8 - bufferRem))
-		w.bufferBits += bufferRem
+		w.bufferBits += int(bufferRem)
 
 		// proceed to remaining data
 		sourceBits -= 8
@@ -283,7 +283,7 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 
 	// 0 <= sourceBits <= 8; all data leftover is in source[sourcePos]
 	if sourceBits > 0 {
-		b = uint32((source[sourcePos] << sourceGap) & 0xff) // bits are left-justified
+		b = byte((source[sourcePos] << sourceGap) & 0xff) // bits are left-justified
 
 		// process remaining bits
 		w.buffer[w.bufferPos] |= b >> bufferRem
@@ -291,14 +291,14 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 		b = 0
 	}
 
-	if bufferRem+sourceBits < 8 {
+	if uint32(bufferRem)+sourceBits < 8 {
 		// remaining data fits on buffer[bufferPos]
-		w.bufferBits += sourceBits
+		w.bufferBits += int(sourceBits)
 	} else {
 		// buffer[bufferPos] is full
 		w.bufferPos++
-		w.bufferBits += 8 - bufferRem // bufferBits = 8*bufferPos
-		sourceBits -= 8 - bufferRem
+		w.bufferBits += 8 - int(bufferRem) // bufferBits = 8*bufferPos
+		sourceBits -= 8 - uint32(bufferRem)
 
 		// now 0 <= sourceBits <= 8; all data leftover is in source[sourcePos]
 		if w.bufferBits == digestBits {
@@ -311,23 +311,26 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 		w.buffer[w.bufferPos] = byte(b << (8 - bufferRem))
 		w.bufferBits += int(sourceBits)
 	}
+	return
 }
 
-func (w *whirlpool) Sum(in []byte) []byte {
-	var digest *[]byte
+func (w *whirlpool) Sum(in []byte) (final []byte) {
+	var (
+		digest [digestBytes]byte
+	)
 
 	// copy the whirlpool so that the caller can keep summing
 	n := *w
 
 	// append a 1-bit
-	n.buffer[n.bufferPos] |= 0x80 >> (n.bufferBits & 7)
+	n.buffer[n.bufferPos] |= 0x80 >> (uint(n.bufferBits) & 7)
 	n.bufferPos++ // remaining bits are 0
 
 	// pad with 0 bits
 	if n.bufferPos > wblockBytes-lengthBytes {
 		if n.bufferPos < wblockBytes {
 			for n.bufferPos < wblockBytes-lengthBytes {
-				n.buffer[BufferPos] = 0
+				n.buffer[n.bufferPos] = 0
 				n.bufferPos++
 			}
 		}
@@ -338,7 +341,7 @@ func (w *whirlpool) Sum(in []byte) []byte {
 	}
 
 	if n.bufferPos < wblockBytes-lengthBytes {
-		for n.BufferPos < (wblockBytes - lengthBytes - n.bufferPos) {
+		for n.bufferPos < (wblockBytes - lengthBytes - n.bufferPos) {
 			n.buffer[n.bufferPos] = 0
 			n.bufferPos++
 		}
@@ -347,7 +350,7 @@ func (w *whirlpool) Sum(in []byte) []byte {
 
 	// append bit length of hashed data
 	for i := 0; n.bufferPos < wblockBytes; i++ {
-		n.buffer[bufferPos] = n.bitLength[i]
+		n.buffer[n.bufferPos] = n.bitLength[i]
 		n.bufferPos++
 	}
 
@@ -356,16 +359,16 @@ func (w *whirlpool) Sum(in []byte) []byte {
 
 	// return the final digest as []byte
 	for i := 0; i < digestBytes/8; i++ {
-		digest[0] = uint8(n.hash[i] >> 56)
-		digest[1] = uint8(n.hash[i] >> 48)
-		digest[2] = uint8(n.hash[i] >> 40)
-		digest[3] = uint8(n.hash[i] >> 32)
-		digest[4] = uint8(n.hash[i] >> 24)
-		digest[5] = uint8(n.hash[i] >> 16)
-		digest[6] = uint8(n.hash[i] >> 8)
-		digest[7] = uint8(n.hash[i])
-		digest += 8
+		b := i * 8
+		digest[b] = uint8(n.hash[i] >> 56)
+		digest[b+1] = uint8(n.hash[i] >> 48)
+		digest[b+2] = uint8(n.hash[i] >> 40)
+		digest[b+3] = uint8(n.hash[i] >> 32)
+		digest[b+4] = uint8(n.hash[i] >> 24)
+		digest[b+5] = uint8(n.hash[i] >> 16)
+		digest[b+6] = uint8(n.hash[i] >> 8)
+		digest[b+7] = uint8(n.hash[i])
 	}
 
-	return append(in, digest[:lengthBytes])
+	return append(in, final[:digestBytes]...)
 }
