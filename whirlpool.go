@@ -1,6 +1,9 @@
 package whirlpool
 
-import "hash"
+import (
+	"fmt"
+	"hash"
+)
 
 type whirlpool struct {
 	bitLength  [lengthBytes]byte       // number of hashed bits
@@ -10,7 +13,7 @@ type whirlpool struct {
 	hash       [digestBytes / 8]uint64 // hash state
 }
 
-func NewWhirlpool() hash.Hash {
+func New() hash.Hash {
 	d := new(whirlpool)
 	return d
 }
@@ -37,12 +40,21 @@ func (w *whirlpool) BlockSize() int {
 }
 
 func (w *whirlpool) transform() {
+	fmt.Println("transform starts")
 	var (
 		K     [8]uint64 // round key
 		block [8]uint64 // mu(buffer)
 		state [8]uint64 // cipher state
 		L     [8]uint64
 	)
+
+	/* TRACE */
+	fmt.Printf("The 8x8 matrix Z' derived from the data-string is as follows.\n")
+	for i := 0; i < wblockBytes/8; i++ {
+		fmt.Printf("    %02X %02X %02X %02X %02X %02X %02X %02X\n",
+			w.buffer[8*i], w.buffer[8*i+1], w.buffer[8*i+2], w.buffer[8*i+3],
+			w.buffer[8*i+4], w.buffer[8*i+5], w.buffer[8*i+6], w.buffer[8*i+7])
+	}
 
 	// map buffer to a block
 	for i := 0; i < 8; i++ {
@@ -61,6 +73,28 @@ func (w *whirlpool) transform() {
 	for i := 0; i < 8; i++ {
 		state[i] = block[i] ^ K[i]
 		w.hash[i] = state[i]
+	}
+
+	/* TRACE */
+	fmt.Printf("\nThe K_0 matrix (from the initialization value IV) and X'' matrix are as follows.\n")
+	for i := 0; i < digestBytes/8; i++ {
+		fmt.Printf("    %02X %02X %02X %02X %02X %02X %02X %02X        %02X %02X %02X %02X %02X %02X %02X %02X\n",
+			byte(K[i]>>56),
+			byte(K[i]>>48),
+			byte(K[i]>>40),
+			byte(K[i]>>32),
+			byte(K[i]>>24),
+			byte(K[i]>>16),
+			byte(K[i]>>8),
+			byte(K[i]),
+			byte(state[i]>>56),
+			byte(state[i]>>48),
+			byte(state[i]>>40),
+			byte(state[i]>>32),
+			byte(state[i]>>24),
+			byte(state[i]>>16),
+			byte(state[i]>>8),
+			byte(state[i]))
 	}
 
 	// iterate over all rounds
@@ -143,7 +177,7 @@ func (w *whirlpool) transform() {
 			K[i] = L[i]
 		}
 
-		// apply round-th round transformation
+		// apply r-th round transformation
 		L[0] = (C0[int(state[0]>>56)] ^
 			C1[int((state[7]>>48)&0xff)] ^
 			C2[int((state[6]>>40)&0xff)] ^
@@ -228,24 +262,54 @@ func (w *whirlpool) transform() {
 			state[i] = L[i]
 		}
 
-		// apply miyaguchi-preneel compression function
-		for i := 0; i < 8; i++ {
-			w.hash[i] ^= state[i] ^ block[i]
+		/* TRACE */
+		fmt.Printf("The following are (hexadecimal representations of) the successive values of the variables K_i for i = 1 to 10 and W'.\n")
+		fmt.Printf("i = %d\n", r)
+		for i := 0; i < digestBytes/8; i++ {
+			fmt.Printf("    %02X %02X %02X %02X %02X %02X %02X %02X        %02X %02X %02X %02X %02X %02X %02X %02X\n",
+				byte(K[i]>>56),
+				byte(K[i]>>48),
+				byte(K[i]>>40),
+				byte(K[i]>>32),
+				byte(K[i]>>24),
+				byte(K[i]>>16),
+				byte(K[i]>>8),
+				byte(K[i]),
+
+				byte(state[i]>>56),
+				byte(state[i]>>48),
+				byte(state[i]>>40),
+				byte(state[i]>>32),
+				byte(state[i]>>24),
+				byte(state[i]>>16),
+				byte(state[i]>>8),
+				byte(state[i]))
 		}
+		fmt.Printf("\n")
+
+	}
+
+	// apply miyaguchi-preneel compression function
+	for i := 0; i < 8; i++ {
+		w.hash[i] ^= state[i] ^ block[i]
 	}
 }
 
 func (w *whirlpool) Write(source []byte) (nn int, err error) {
 	nn = len(source)
+	fmt.Println("write starts")
 
 	var (
-		sourcePos  int                                      // index of the leftmost source
-		sourceBits uint32 = uint32(len(source) * 8)         // num of bits to process
-		sourceGap  uint   = uint(8 - (int(sourceBits&7))&7) // space on source[sourcePos]
-		bufferRem  uint   = uint(w.bufferBits & 7)          // occupied bits on buffer[bufferPos]
+		sourcePos  int                                         // index of the leftmost source
+		sourceBits uint64 = uint64(len(source) * 8)            // num of bits to process
+		sourceGap  uint64 = uint64((8 - (sourceBits & 7)) & 7) // space on source[sourcePos]
+		bufferRem  uint64 = uint64(w.bufferBits & 7)           // occupied bits on buffer[bufferPos]
 		value      uint64 = uint64(sourceBits)
 		b          byte
 	)
+
+	/* TRACE */
+	//fmt.Printf("%X\n%X\n%X\n%X\n%X\n%X\n", sourcePos, sourceBits, sourceGap, bufferRem, value, b)
 
 	// tally length of data added
 	for i, carry := 31, uint32(0); i >= 0 && (carry != 0 || value != 0); i-- {
@@ -291,14 +355,14 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 		b = 0
 	}
 
-	if uint32(bufferRem)+sourceBits < 8 {
+	if bufferRem+sourceBits < 8 {
 		// remaining data fits on buffer[bufferPos]
 		w.bufferBits += int(sourceBits)
 	} else {
 		// buffer[bufferPos] is full
 		w.bufferPos++
 		w.bufferBits += 8 - int(bufferRem) // bufferBits = 8*bufferPos
-		sourceBits -= 8 - uint32(bufferRem)
+		sourceBits -= 8 - bufferRem
 
 		// now 0 <= sourceBits <= 8; all data leftover is in source[sourcePos]
 		if w.bufferBits == digestBits {
@@ -314,26 +378,15 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 	return
 }
 
-func (w *whirlpool) Sum(in []byte) (final []byte) {
-	var (
-		digest [digestBytes]byte
-	)
-
+func (w *whirlpool) Sum(in []byte) []byte {
 	// copy the whirlpool so that the caller can keep summing
 	n := *w
 
 	// append a 1-bit
 	n.buffer[n.bufferPos] |= 0x80 >> (uint(n.bufferBits) & 7)
-	n.bufferPos++ // remaining bits are 0
+	n.bufferPos++ // remaining bits are left 0
 
-	// pad with 0 bits
 	if n.bufferPos > wblockBytes-lengthBytes {
-		if n.bufferPos < wblockBytes {
-			for n.bufferPos < wblockBytes-lengthBytes {
-				n.buffer[n.bufferPos] = 0
-				n.bufferPos++
-			}
-		}
 		// process data block
 		n.transform()
 		// reset buffer
@@ -358,17 +411,17 @@ func (w *whirlpool) Sum(in []byte) (final []byte) {
 	n.transform()
 
 	// return the final digest as []byte
+	var digest [digestBytes]byte
 	for i := 0; i < digestBytes/8; i++ {
-		b := i * 8
-		digest[b] = uint8(n.hash[i] >> 56)
-		digest[b+1] = uint8(n.hash[i] >> 48)
-		digest[b+2] = uint8(n.hash[i] >> 40)
-		digest[b+3] = uint8(n.hash[i] >> 32)
-		digest[b+4] = uint8(n.hash[i] >> 24)
-		digest[b+5] = uint8(n.hash[i] >> 16)
-		digest[b+6] = uint8(n.hash[i] >> 8)
-		digest[b+7] = uint8(n.hash[i])
+		digest[i*8] = byte(n.hash[i] >> 56)
+		digest[i*8+1] = byte(n.hash[i] >> 48)
+		digest[i*8+2] = byte(n.hash[i] >> 40)
+		digest[i*8+3] = byte(n.hash[i] >> 32)
+		digest[i*8+4] = byte(n.hash[i] >> 24)
+		digest[i*8+5] = byte(n.hash[i] >> 16)
+		digest[i*8+6] = byte(n.hash[i] >> 8)
+		digest[i*8+7] = byte(n.hash[i])
 	}
 
-	return append(in, final[:digestBytes]...)
+	return append(in, digest[:digestBytes]...)
 }
