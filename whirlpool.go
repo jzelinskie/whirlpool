@@ -239,17 +239,18 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 	nn = len(source)
 
 	var (
-		sourcePos  int
-		sourceBits uint32 = uint32(len(source) * 8)
-		sourceGap  uint   = uint(8 - (int(sourceBits&7))&7)
-		bufferRem  uint   = uint(w.bufferBits & 7)
+		sourcePos  int                                     // index of the leftmost source
+		sourceBits uint32 = uint32(len(source) * 8)        // num of bits to process
+		sourceGap  int    = int(8 - (int(sourceBits&7))&7) // space on source[sourcePos]
+		bufferRem  int    = int(w.bufferBits & 7)          // occupied bits on buffer[bufferPos]
 		value      uint64 = uint64(sourceBits)
 		b          uint32
 	)
 
+	// tally length of data added
 	for i, carry := 31, uint32(0); i >= 0 && (carry != 0 || value != 0); i-- {
 		carry += uint32(w.bitLength[i]) + (uint32(value & 0xff))
-		w.bitLength[i] = uint8(carry)
+		w.bitLength[i] = byte(carry)
 		carry >>= 8
 		value >>= 8
 	}
@@ -264,10 +265,10 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 		w.bufferPos++
 		w.buffer[w.bufferPos] |= uint8(b >> bufferRem)
 		w.bufferBits += 8 - bufferRem
+
 		if w.bufferBits == digestBits {
 			// process this block
 			w.transform()
-
 			// reset the buffer
 			w.bufferBits = 0
 			w.bufferPos = 0
@@ -282,7 +283,7 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 
 	// 0 <= sourceBits <= 8; all data leftover is in source[sourcePos]
 	if sourceBits > 0 {
-		b = (source[sourcePos] << sourceGap) & 0xff // bits are left-justified
+		b = uint32((source[sourcePos] << sourceGap) & 0xff) // bits are left-justified
 
 		// process remaining bits
 		w.buffer[w.bufferPos] |= b >> bufferRem
@@ -291,21 +292,23 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 	}
 
 	if bufferRem+sourceBits < 8 {
+		// remaining data fits on buffer[bufferPos]
 		w.bufferBits += sourceBits
 	} else {
+		// buffer[bufferPos] is full
 		w.bufferPos++
-		w.bufferBits += 8 - bufferRem // w.bufferBits = 8*w.bufferPos
+		w.bufferBits += 8 - bufferRem // bufferBits = 8*bufferPos
 		sourceBits -= 8 - bufferRem
+
 		// now 0 <= sourceBits <= 8; all data leftover is in source[sourcePos]
 		if w.bufferBits == digestBits {
 			// process data block
 			w.transform()
-
 			// reset buffer
 			w.bufferBits = 0
 			w.bufferPos = 0
 		}
-		w.buffer[w.bufferPos] = uint8(b << (8 - bufferRem))
+		w.buffer[w.bufferPos] = byte(b << (8 - bufferRem))
 		w.bufferBits += int(sourceBits)
 	}
 }
