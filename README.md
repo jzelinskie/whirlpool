@@ -9,11 +9,15 @@ a whirlpool hashing library for go
 
 [x] transform function
 
-[ ] write function
+[x] write function
 
-[ ] sum function
+[x] sum function
+
+[x] proven to work sometimes
+
+[ ] looked over/proven to work all the time
 
 
 ## license
 
-not until it works
+not until it's proven to work

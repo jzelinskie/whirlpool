@@ -71,8 +71,8 @@ func (w *whirlpool) transform() {
 
 	// compute & apply K^0 to cipher state
 	for i := 0; i < 8; i++ {
+		K[i] = w.hash[i]
 		state[i] = block[i] ^ K[i]
-		w.hash[i] = state[i]
 	}
 
 	/* TRACE */
@@ -96,11 +96,12 @@ func (w *whirlpool) transform() {
 			byte(state[i]>>8),
 			byte(state[i]))
 	}
+	fmt.Printf("The following are (hexadecimal representations of) the successive values of the variables K_i for i = 2 to 10 and W'.\n")
 
 	// iterate over all rounds
 	for r := 1; r <= rounds; r++ {
 		// compute K^rounds from K^(rounds-1)
-		L[0] = (C0[int(K[0]>>56)] ^
+		L[0] = C0[int(K[0]>>56)] ^
 			C1[int((K[7]>>48)&0xff)] ^
 			C2[int((K[6]>>40)&0xff)] ^
 			C3[int((K[5]>>32)&0xff)] ^
@@ -108,77 +109,77 @@ func (w *whirlpool) transform() {
 			C5[int((K[3]>>16)&0xff)] ^
 			C6[int((K[2]>>8)&0xff)] ^
 			C7[int(K[1]&0xff)] ^
-			rc[rounds])
+			rc[r]
 
-		L[1] = (C0[int(K[1]>>56)] ^
+		L[1] = C0[int(K[1]>>56)] ^
 			C1[int((K[0]>>48)&0xff)] ^
 			C2[int((K[7]>>40)&0xff)] ^
 			C3[int((K[6]>>32)&0xff)] ^
 			C4[int((K[5]>>24)&0xff)] ^
 			C5[int((K[4]>>16)&0xff)] ^
 			C6[int((K[3]>>8)&0xff)] ^
-			C7[int(K[2]&0xff)])
+			C7[int(K[2]&0xff)]
 
-		L[2] = (C0[int(K[2]>>56)] ^
+		L[2] = C0[int(K[2]>>56)] ^
 			C1[int((K[1]>>48)&0xff)] ^
 			C2[int((K[0]>>40)&0xff)] ^
 			C3[int((K[7]>>32)&0xff)] ^
 			C4[int((K[6]>>24)&0xff)] ^
 			C5[int((K[5]>>16)&0xff)] ^
 			C6[int((K[4]>>8)&0xff)] ^
-			C7[int(K[3]&0xff)])
+			C7[int(K[3]&0xff)]
 
-		L[3] = (C0[int(K[3]>>56)] ^
+		L[3] = C0[int(K[3]>>56)] ^
 			C1[int((K[2]>>48)&0xff)] ^
 			C2[int((K[1]>>40)&0xff)] ^
 			C3[int((K[0]>>32)&0xff)] ^
 			C4[int((K[7]>>24)&0xff)] ^
 			C5[int((K[6]>>16)&0xff)] ^
 			C6[int((K[5]>>8)&0xff)] ^
-			C7[int(K[4]&0xff)])
+			C7[int(K[4]&0xff)]
 
-		L[4] = (C0[int(K[4]>>56)] ^
+		L[4] = C0[int(K[4]>>56)] ^
 			C1[int((K[3]>>48)&0xff)] ^
 			C2[int((K[2]>>40)&0xff)] ^
 			C3[int((K[1]>>32)&0xff)] ^
 			C4[int((K[0]>>24)&0xff)] ^
 			C5[int((K[7]>>16)&0xff)] ^
 			C6[int((K[6]>>8)&0xff)] ^
-			C7[int(K[5]&0xff)])
+			C7[int(K[5]&0xff)]
 
-		L[5] = (C0[int(K[5]>>56)] ^
+		L[5] = C0[int(K[5]>>56)] ^
 			C1[int((K[4]>>48)&0xff)] ^
 			C2[int((K[3]>>40)&0xff)] ^
 			C3[int((K[2]>>32)&0xff)] ^
 			C4[int((K[1]>>24)&0xff)] ^
 			C5[int((K[0]>>16)&0xff)] ^
 			C6[int((K[7]>>8)&0xff)] ^
-			C7[int(K[6]&0xff)])
+			C7[int(K[6]&0xff)]
 
-		L[6] = (C0[int(K[6]>>56)] ^
+		L[6] = C0[int(K[6]>>56)] ^
 			C1[int((K[5]>>48)&0xff)] ^
 			C2[int((K[4]>>40)&0xff)] ^
 			C3[int((K[3]>>32)&0xff)] ^
 			C4[int((K[2]>>24)&0xff)] ^
 			C5[int((K[1]>>16)&0xff)] ^
 			C6[int((K[0]>>8)&0xff)] ^
-			C7[int(K[7]&0xff)])
+			C7[int(K[7]&0xff)]
 
-		L[7] = (C0[int(K[7]>>56)] ^
+		L[7] = C0[int(K[7]>>56)] ^
 			C1[int((K[6]>>48)&0xff)] ^
 			C2[int((K[5]>>40)&0xff)] ^
 			C3[int((K[4]>>32)&0xff)] ^
 			C4[int((K[3]>>24)&0xff)] ^
 			C5[int((K[2]>>16)&0xff)] ^
 			C6[int((K[1]>>8)&0xff)] ^
-			C7[int(K[0]&0xff)])
+			C7[int(K[0]&0xff)]
 
 		for i := 0; i < 8; i++ {
 			K[i] = L[i]
 		}
 
 		// apply r-th round transformation
-		L[0] = (C0[int(state[0]>>56)] ^
+		L[0] = C0[int(state[0]>>56)] ^
 			C1[int((state[7]>>48)&0xff)] ^
 			C2[int((state[6]>>40)&0xff)] ^
 			C3[int((state[5]>>32)&0xff)] ^
@@ -186,9 +187,9 @@ func (w *whirlpool) transform() {
 			C5[int((state[3]>>16)&0xff)] ^
 			C6[int((state[2]>>8)&0xff)] ^
 			C7[int(state[1]&0xff)] ^
-			K[0])
+			K[0]
 
-		L[1] = (C0[int(state[1]>>56)] ^
+		L[1] = C0[int(state[1]>>56)] ^
 			C1[int((state[0]>>48)&0xff)] ^
 			C2[int((state[7]>>40)&0xff)] ^
 			C3[int((state[6]>>32)&0xff)] ^
@@ -196,9 +197,9 @@ func (w *whirlpool) transform() {
 			C5[int((state[4]>>16)&0xff)] ^
 			C6[int((state[3]>>8)&0xff)] ^
 			C7[int(state[2]&0xff)] ^
-			K[1])
+			K[1]
 
-		L[2] = (C0[int(state[2]>>56)] ^
+		L[2] = C0[int(state[2]>>56)] ^
 			C1[int((state[1]>>48)&0xff)] ^
 			C2[int((state[0]>>40)&0xff)] ^
 			C3[int((state[7]>>32)&0xff)] ^
@@ -206,9 +207,9 @@ func (w *whirlpool) transform() {
 			C5[int((state[5]>>16)&0xff)] ^
 			C6[int((state[4]>>8)&0xff)] ^
 			C7[int(state[3]&0xff)] ^
-			K[2])
+			K[2]
 
-		L[3] = (C0[int(state[3]>>56)] ^
+		L[3] = C0[int(state[3]>>56)] ^
 			C1[int((state[2]>>48)&0xff)] ^
 			C2[int((state[1]>>40)&0xff)] ^
 			C3[int((state[0]>>32)&0xff)] ^
@@ -216,9 +217,9 @@ func (w *whirlpool) transform() {
 			C5[int((state[6]>>16)&0xff)] ^
 			C6[int((state[5]>>8)&0xff)] ^
 			C7[int(state[4]&0xff)] ^
-			K[3])
+			K[3]
 
-		L[4] = (C0[int(state[4]>>56)] ^
+		L[4] = C0[int(state[4]>>56)] ^
 			C1[int((state[3]>>48)&0xff)] ^
 			C2[int((state[2]>>40)&0xff)] ^
 			C3[int((state[1]>>32)&0xff)] ^
@@ -226,9 +227,9 @@ func (w *whirlpool) transform() {
 			C5[int((state[7]>>16)&0xff)] ^
 			C6[int((state[6]>>8)&0xff)] ^
 			C7[int(state[5]&0xff)] ^
-			K[4])
+			K[4]
 
-		L[5] = (C0[int(state[5]>>56)] ^
+		L[5] = C0[int(state[5]>>56)] ^
 			C1[int((state[4]>>48)&0xff)] ^
 			C2[int((state[3]>>40)&0xff)] ^
 			C3[int((state[2]>>32)&0xff)] ^
@@ -236,9 +237,9 @@ func (w *whirlpool) transform() {
 			C5[int((state[0]>>16)&0xff)] ^
 			C6[int((state[7]>>8)&0xff)] ^
 			C7[int(state[6]&0xff)] ^
-			K[5])
+			K[5]
 
-		L[6] = (C0[int(state[6]>>56)] ^
+		L[6] = C0[int(state[6]>>56)] ^
 			C1[int((state[5]>>48)&0xff)] ^
 			C2[int((state[4]>>40)&0xff)] ^
 			C3[int((state[3]>>32)&0xff)] ^
@@ -246,9 +247,9 @@ func (w *whirlpool) transform() {
 			C5[int((state[1]>>16)&0xff)] ^
 			C6[int((state[0]>>8)&0xff)] ^
 			C7[int(state[7]&0xff)] ^
-			K[6])
+			K[6]
 
-		L[7] = (C0[int(state[7]>>56)] ^
+		L[7] = C0[int(state[7]>>56)] ^
 			C1[int((state[6]>>48)&0xff)] ^
 			C2[int((state[5]>>40)&0xff)] ^
 			C3[int((state[4]>>32)&0xff)] ^
@@ -256,14 +257,13 @@ func (w *whirlpool) transform() {
 			C5[int((state[2]>>16)&0xff)] ^
 			C6[int((state[1]>>8)&0xff)] ^
 			C7[int(state[0]&0xff)] ^
-			K[7])
+			K[7]
 
 		for i := 0; i < 8; i++ {
 			state[i] = L[i]
 		}
 
 		/* TRACE */
-		fmt.Printf("The following are (hexadecimal representations of) the successive values of the variables K_i for i = 1 to 10 and W'.\n")
 		fmt.Printf("i = %d\n", r)
 		for i := 0; i < digestBytes/8; i++ {
 			fmt.Printf("    %02X %02X %02X %02X %02X %02X %02X %02X        %02X %02X %02X %02X %02X %02X %02X %02X\n",
@@ -293,6 +293,21 @@ func (w *whirlpool) transform() {
 	for i := 0; i < 8; i++ {
 		w.hash[i] ^= state[i] ^ block[i]
 	}
+
+	/* TRACE */
+	fmt.Printf("The value of Y' output from the round-function is as follows.\n")
+	for i := 0; i < digestBytes/8; i++ {
+		fmt.Printf("    %02X %02X %02X %02X %02X %02X %02X %02X\n",
+			byte(w.hash[i]>>56),
+			byte(w.hash[i]>>48),
+			byte(w.hash[i]>>40),
+			byte(w.hash[i]>>32),
+			byte(w.hash[i]>>24),
+			byte(w.hash[i]>>16),
+			byte(w.hash[i]>>8),
+			byte(w.hash[i]))
+	}
+	fmt.Printf("\n")
 }
 
 func (w *whirlpool) Write(source []byte) (nn int, err error) {
