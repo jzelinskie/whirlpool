@@ -13,9 +13,13 @@ a whirlpool hashing library for go
 
 [x] sum function
 
-[x] proven to work sometimes
+[x] reset function
 
-[ ] looked over/proven to work all the time
+[x] passes at least some tests
+
+[x] full of midstates and other vars printed to stdout (will eventually have a separate branch with traces)
+
+[ ] looked over/works on all tests
 
 
 ## license
