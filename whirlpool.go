@@ -20,9 +20,9 @@ func New() hash.Hash {
 
 func (w *whirlpool) Reset() {
 	// cleanup buffer
+	w.buffer = [wblockBytes]byte{}
 	w.bufferBits = 0
 	w.bufferPos = 0
-	w.buffer[0] = 0 // only necessary to clean bufferPos
 
 	// cleanup digest
 	w.hash = [digestBytes / 8]uint64{}
@@ -310,21 +310,21 @@ func (w *whirlpool) transform() {
 	fmt.Printf("\n")
 }
 
-func (w *whirlpool) Write(source []byte) (nn int, err error) {
-	nn = len(source)
-	fmt.Println("write starts")
+func (w *whirlpool) Write(source []byte) (int, error) {
+	fmt.Printf("%s write starts\n", string(source))
 
 	var (
-		sourcePos  int                                         // index of the leftmost source
-		sourceBits uint64 = uint64(len(source) * 8)            // num of bits to process
-		sourceGap  uint64 = uint64((8 - (sourceBits & 7)) & 7) // space on source[sourcePos]
-		bufferRem  uint64 = uint64(w.bufferBits & 7)           // occupied bits on buffer[bufferPos]
-		value      uint64 = uint64(sourceBits)
-		b          byte
+		sourcePos  int                                            // index of the leftmost source
+		nn         int    = len(source)                           // num of bytes to process
+		sourceBits uint64 = uint64(nn * 8)                        // num of bits to process
+		value      uint64 = sourceBits                            // value
+		sourceGap  uint   = uint((8 - (int(sourceBits & 7))) & 7) // space on source[sourcePos]
+		bufferRem  uint   = uint(w.bufferBits & 7)                // occupied bits on buffer[bufferPos]
+		b          uint32                                         // current byte
 	)
 
 	/* TRACE */
-	//fmt.Printf("%X\n%X\n%X\n%X\n%X\n%X\n", sourcePos, sourceBits, sourceGap, bufferRem, value, b)
+	fmt.Printf("SourcePos:%X\nSourceBits:%X\nSourceGap:%X\nbufferRem:%X\nvalue:%X\nb:%X\n", sourcePos, sourceBits, sourceGap, bufferRem, value, b)
 
 	// tally length of data added
 	for i, carry := 31, uint32(0); i >= 0 && (carry != 0 || value != 0); i-- {
@@ -332,27 +332,29 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 		w.bitLength[i] = byte(carry)
 		carry >>= 8
 		value >>= 8
+		fmt.Printf("carry:%X\nvalue:%X\n", carry, value)
 	}
 
 	// process data in chunks of 8 bits
 	for sourceBits > 8 {
 		// take a byte form the source
-		b = (((source[sourcePos] << sourceGap) & 0xff) |
+		b = uint32(((source[sourcePos] << sourceGap) & 0xff) |
 			((source[sourcePos+1] & 0xff) >> (8 - sourceGap)))
 
 		// process this byte
-		w.bufferPos++
 		w.buffer[w.bufferPos] |= uint8(b >> bufferRem)
+		w.bufferPos++
 		w.bufferBits += int(8 - bufferRem)
 
 		if w.bufferBits == digestBits {
 			// process this block
+			fmt.Printf("\ntransform 1\n")
 			w.transform()
 			// reset the buffer
 			w.bufferBits = 0
 			w.bufferPos = 0
 		}
-		w.buffer[w.bufferPos] = uint8(b << (8 - bufferRem))
+		w.buffer[w.bufferPos] = byte(b << (8 - bufferRem))
 		w.bufferBits += int(bufferRem)
 
 		// proceed to remaining data
@@ -362,26 +364,27 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 
 	// 0 <= sourceBits <= 8; all data leftover is in source[sourcePos]
 	if sourceBits > 0 {
-		b = byte((source[sourcePos] << sourceGap) & 0xff) // bits are left-justified
+		b = uint32((source[sourcePos] << sourceGap) & 0xff) // bits are left-justified
 
 		// process remaining bits
-		w.buffer[w.bufferPos] |= b >> bufferRem
+		w.buffer[w.bufferPos] |= byte(b) >> bufferRem
 	} else {
 		b = 0
 	}
 
-	if bufferRem+sourceBits < 8 {
+	if uint64(bufferRem)+sourceBits < 8 {
 		// remaining data fits on buffer[bufferPos]
 		w.bufferBits += int(sourceBits)
 	} else {
 		// buffer[bufferPos] is full
 		w.bufferPos++
 		w.bufferBits += 8 - int(bufferRem) // bufferBits = 8*bufferPos
-		sourceBits -= 8 - bufferRem
+		sourceBits -= uint64(8 - bufferRem)
 
 		// now 0 <= sourceBits <= 8; all data leftover is in source[sourcePos]
 		if w.bufferBits == digestBits {
 			// process data block
+			fmt.Printf("\ntransform 2\n")
 			w.transform()
 			// reset buffer
 			w.bufferBits = 0
@@ -390,7 +393,7 @@ func (w *whirlpool) Write(source []byte) (nn int, err error) {
 		w.buffer[w.bufferPos] = byte(b << (8 - bufferRem))
 		w.bufferBits += int(sourceBits)
 	}
-	return
+	return nn, nil
 }
 
 func (w *whirlpool) Sum(in []byte) []byte {
