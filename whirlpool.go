@@ -40,7 +40,6 @@ func (w *whirlpool) BlockSize() int {
 }
 
 func (w *whirlpool) transform() {
-	fmt.Println("transform starts")
 	var (
 		K     [8]uint64 // round key
 		block [8]uint64 // mu(buffer)
@@ -348,7 +347,7 @@ func (w *whirlpool) Write(source []byte) (int, error) {
 
 		if w.bufferBits == digestBits {
 			// process this block
-			fmt.Printf("\ntransform 1\n")
+			fmt.Printf("\nwrite transform 1\n")
 			w.transform()
 			// reset the buffer
 			w.bufferBits = 0
@@ -384,7 +383,7 @@ func (w *whirlpool) Write(source []byte) (int, error) {
 		// now 0 <= sourceBits <= 8; all data leftover is in source[sourcePos]
 		if w.bufferBits == digestBits {
 			// process data block
-			fmt.Printf("\ntransform 2\n")
+			fmt.Printf("\nwrite transform 2\n")
 			w.transform()
 			// reset buffer
 			w.bufferBits = 0
@@ -404,28 +403,34 @@ func (w *whirlpool) Sum(in []byte) []byte {
 	n.buffer[n.bufferPos] |= 0x80 >> (uint(n.bufferBits) & 7)
 	n.bufferPos++ // remaining bits are left 0
 
+	// pad with 0s to complete
 	if n.bufferPos > wblockBytes-lengthBytes {
+		if n.bufferPos < wblockBytes {
+			for i := 0; i < wblockBytes-n.bufferPos; i++ {
+				n.buffer[n.bufferPos+i] = 0
+			}
+		}
 		// process data block
+		fmt.Printf("\nsum transform 1\n")
 		n.transform()
 		// reset buffer
 		n.bufferPos = 0
 	}
 
 	if n.bufferPos < wblockBytes-lengthBytes {
-		for n.bufferPos < (wblockBytes - lengthBytes - n.bufferPos) {
-			n.buffer[n.bufferPos] = 0
-			n.bufferPos++
+		for i := 0; i < (wblockBytes-lengthBytes)-n.bufferPos; i++ {
+			n.buffer[n.bufferPos+i] = 0
 		}
 	}
 	n.bufferPos = wblockBytes - lengthBytes
 
 	// append bit length of hashed data
-	for i := 0; n.bufferPos < wblockBytes; i++ {
-		n.buffer[n.bufferPos] = n.bitLength[i]
-		n.bufferPos++
+	for i := 0; i < lengthBytes; i++ {
+		n.buffer[n.bufferPos+i] = n.bitLength[i]
 	}
 
 	// process data block
+	fmt.Printf("\nsum transform 2\n")
 	n.transform()
 
 	// return the final digest as []byte
