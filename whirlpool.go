@@ -1,7 +1,6 @@
 package whirlpool
 
 import (
-	"fmt"
 	"hash"
 )
 
@@ -47,14 +46,6 @@ func (w *whirlpool) transform() {
 		L     [8]uint64
 	)
 
-	/* TRACE */
-	fmt.Printf("The 8x8 matrix Z' derived from the data-string is as follows.\n")
-	for i := 0; i < wblockBytes/8; i++ {
-		fmt.Printf("    %02X %02X %02X %02X %02X %02X %02X %02X\n",
-			w.buffer[8*i], w.buffer[8*i+1], w.buffer[8*i+2], w.buffer[8*i+3],
-			w.buffer[8*i+4], w.buffer[8*i+5], w.buffer[8*i+6], w.buffer[8*i+7])
-	}
-
 	// map buffer to a block
 	for i := 0; i < 8; i++ {
 		b := 8 * i
@@ -73,29 +64,6 @@ func (w *whirlpool) transform() {
 		K[i] = w.hash[i]
 		state[i] = block[i] ^ K[i]
 	}
-
-	/* TRACE */
-	fmt.Printf("\nThe K_0 matrix (from the initialization value IV) and X'' matrix are as follows.\n")
-	for i := 0; i < digestBytes/8; i++ {
-		fmt.Printf("    %02X %02X %02X %02X %02X %02X %02X %02X        %02X %02X %02X %02X %02X %02X %02X %02X\n",
-			byte(K[i]>>56),
-			byte(K[i]>>48),
-			byte(K[i]>>40),
-			byte(K[i]>>32),
-			byte(K[i]>>24),
-			byte(K[i]>>16),
-			byte(K[i]>>8),
-			byte(K[i]),
-			byte(state[i]>>56),
-			byte(state[i]>>48),
-			byte(state[i]>>40),
-			byte(state[i]>>32),
-			byte(state[i]>>24),
-			byte(state[i]>>16),
-			byte(state[i]>>8),
-			byte(state[i]))
-	}
-	fmt.Printf("The following are (hexadecimal representations of) the successive values of the variables K_i for i = 2 to 10 and W'.\n")
 
 	// iterate over all rounds
 	for r := 1; r <= rounds; r++ {
@@ -261,57 +229,15 @@ func (w *whirlpool) transform() {
 		for i := 0; i < 8; i++ {
 			state[i] = L[i]
 		}
-
-		/* TRACE */
-		fmt.Printf("i = %d\n", r)
-		for i := 0; i < digestBytes/8; i++ {
-			fmt.Printf("    %02X %02X %02X %02X %02X %02X %02X %02X        %02X %02X %02X %02X %02X %02X %02X %02X\n",
-				byte(K[i]>>56),
-				byte(K[i]>>48),
-				byte(K[i]>>40),
-				byte(K[i]>>32),
-				byte(K[i]>>24),
-				byte(K[i]>>16),
-				byte(K[i]>>8),
-				byte(K[i]),
-
-				byte(state[i]>>56),
-				byte(state[i]>>48),
-				byte(state[i]>>40),
-				byte(state[i]>>32),
-				byte(state[i]>>24),
-				byte(state[i]>>16),
-				byte(state[i]>>8),
-				byte(state[i]))
-		}
-		fmt.Printf("\n")
-
 	}
 
 	// apply miyaguchi-preneel compression function
 	for i := 0; i < 8; i++ {
 		w.hash[i] ^= state[i] ^ block[i]
 	}
-
-	/* TRACE */
-	fmt.Printf("The value of Y' output from the round-function is as follows.\n")
-	for i := 0; i < digestBytes/8; i++ {
-		fmt.Printf("    %02X %02X %02X %02X %02X %02X %02X %02X\n",
-			byte(w.hash[i]>>56),
-			byte(w.hash[i]>>48),
-			byte(w.hash[i]>>40),
-			byte(w.hash[i]>>32),
-			byte(w.hash[i]>>24),
-			byte(w.hash[i]>>16),
-			byte(w.hash[i]>>8),
-			byte(w.hash[i]))
-	}
-	fmt.Printf("\n")
 }
 
 func (w *whirlpool) Write(source []byte) (int, error) {
-	fmt.Printf("%s write starts\n", string(source))
-
 	var (
 		sourcePos  int                                            // index of the leftmost source
 		nn         int    = len(source)                           // num of bytes to process
@@ -322,16 +248,12 @@ func (w *whirlpool) Write(source []byte) (int, error) {
 		b          uint32                                         // current byte
 	)
 
-	/* TRACE */
-	fmt.Printf("SourcePos:%X\nSourceBits:%X\nSourceGap:%X\nbufferRem:%X\nvalue:%X\nb:%X\n", sourcePos, sourceBits, sourceGap, bufferRem, value, b)
-
 	// tally length of data added
 	for i, carry := 31, uint32(0); i >= 0 && (carry != 0 || value != 0); i-- {
 		carry += uint32(w.bitLength[i]) + (uint32(value & 0xff))
 		w.bitLength[i] = byte(carry)
 		carry >>= 8
 		value >>= 8
-		fmt.Printf("carry:%X\nvalue:%X\n", carry, value)
 	}
 
 	// process data in chunks of 8 bits
@@ -347,7 +269,6 @@ func (w *whirlpool) Write(source []byte) (int, error) {
 
 		if w.bufferBits == digestBits {
 			// process this block
-			fmt.Printf("\nwrite transform 1\n")
 			w.transform()
 			// reset the buffer
 			w.bufferBits = 0
@@ -383,7 +304,6 @@ func (w *whirlpool) Write(source []byte) (int, error) {
 		// now 0 <= sourceBits <= 8; all data leftover is in source[sourcePos]
 		if w.bufferBits == digestBits {
 			// process data block
-			fmt.Printf("\nwrite transform 2\n")
 			w.transform()
 			// reset buffer
 			w.bufferBits = 0
@@ -411,7 +331,6 @@ func (w *whirlpool) Sum(in []byte) []byte {
 			}
 		}
 		// process data block
-		fmt.Printf("\nsum transform 1\n")
 		n.transform()
 		// reset buffer
 		n.bufferPos = 0
@@ -430,7 +349,6 @@ func (w *whirlpool) Sum(in []byte) []byte {
 	}
 
 	// process data block
-	fmt.Printf("\nsum transform 2\n")
 	n.transform()
 
 	// return the final digest as []byte
