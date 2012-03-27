@@ -6,6 +6,8 @@
 // cryptographic hash. Whirlpool is defined in
 // http://www.larc.usp.br/~pbarreto/WhirlpoolPage.html
 
+package whirlpool
+
 import (
 	"fmt"
 	"io"
