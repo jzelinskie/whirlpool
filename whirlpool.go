@@ -92,85 +92,17 @@ func (w *whirlpool) transform() {
 		}
 
 		// Apply r-th round transformation.
-		L[0] = C0[int(state[0]>>56)] ^
-			C1[int((state[7]>>48)&0xff)] ^
-			C2[int((state[6]>>40)&0xff)] ^
-			C3[int((state[5]>>32)&0xff)] ^
-			C4[int((state[4]>>24)&0xff)] ^
-			C5[int((state[3]>>16)&0xff)] ^
-			C6[int((state[2]>>8)&0xff)] ^
-			C7[int(state[1]&0xff)] ^
-			K[0]
-
-		L[1] = C0[int(state[1]>>56)] ^
-			C1[int((state[0]>>48)&0xff)] ^
-			C2[int((state[7]>>40)&0xff)] ^
-			C3[int((state[6]>>32)&0xff)] ^
-			C4[int((state[5]>>24)&0xff)] ^
-			C5[int((state[4]>>16)&0xff)] ^
-			C6[int((state[3]>>8)&0xff)] ^
-			C7[int(state[2]&0xff)] ^
-			K[1]
-
-		L[2] = C0[int(state[2]>>56)] ^
-			C1[int((state[1]>>48)&0xff)] ^
-			C2[int((state[0]>>40)&0xff)] ^
-			C3[int((state[7]>>32)&0xff)] ^
-			C4[int((state[6]>>24)&0xff)] ^
-			C5[int((state[5]>>16)&0xff)] ^
-			C6[int((state[4]>>8)&0xff)] ^
-			C7[int(state[3]&0xff)] ^
-			K[2]
-
-		L[3] = C0[int(state[3]>>56)] ^
-			C1[int((state[2]>>48)&0xff)] ^
-			C2[int((state[1]>>40)&0xff)] ^
-			C3[int((state[0]>>32)&0xff)] ^
-			C4[int((state[7]>>24)&0xff)] ^
-			C5[int((state[6]>>16)&0xff)] ^
-			C6[int((state[5]>>8)&0xff)] ^
-			C7[int(state[4]&0xff)] ^
-			K[3]
-
-		L[4] = C0[int(state[4]>>56)] ^
-			C1[int((state[3]>>48)&0xff)] ^
-			C2[int((state[2]>>40)&0xff)] ^
-			C3[int((state[1]>>32)&0xff)] ^
-			C4[int((state[0]>>24)&0xff)] ^
-			C5[int((state[7]>>16)&0xff)] ^
-			C6[int((state[6]>>8)&0xff)] ^
-			C7[int(state[5]&0xff)] ^
-			K[4]
-
-		L[5] = C0[int(state[5]>>56)] ^
-			C1[int((state[4]>>48)&0xff)] ^
-			C2[int((state[3]>>40)&0xff)] ^
-			C3[int((state[2]>>32)&0xff)] ^
-			C4[int((state[1]>>24)&0xff)] ^
-			C5[int((state[0]>>16)&0xff)] ^
-			C6[int((state[7]>>8)&0xff)] ^
-			C7[int(state[6]&0xff)] ^
-			K[5]
-
-		L[6] = C0[int(state[6]>>56)] ^
-			C1[int((state[5]>>48)&0xff)] ^
-			C2[int((state[4]>>40)&0xff)] ^
-			C3[int((state[3]>>32)&0xff)] ^
-			C4[int((state[2]>>24)&0xff)] ^
-			C5[int((state[1]>>16)&0xff)] ^
-			C6[int((state[0]>>8)&0xff)] ^
-			C7[int(state[7]&0xff)] ^
-			K[6]
-
-		L[7] = C0[int(state[7]>>56)] ^
-			C1[int((state[6]>>48)&0xff)] ^
-			C2[int((state[5]>>40)&0xff)] ^
-			C3[int((state[4]>>32)&0xff)] ^
-			C4[int((state[3]>>24)&0xff)] ^
-			C5[int((state[2]>>16)&0xff)] ^
-			C6[int((state[1]>>8)&0xff)] ^
-			C7[int(state[0]&0xff)] ^
-			K[7]
+		for i := 0; i < 8; i++ {
+			L[i] = C0[byte(state[i%8]>>56)] ^
+				C1[byte(state[(i+7)%8]>>48)] ^
+				C2[byte(state[(i+6)%8]>>40)] ^
+				C3[byte(state[(i+5)%8]>>32)] ^
+				C4[byte(state[(i+4)%8]>>24)] ^
+				C5[byte(state[(i+3)%8]>>16)] ^
+				C6[byte(state[(i+2)%8]>>8)] ^
+				C7[byte(state[(i+1)%8])] ^
+				K[i%8]
+		}
 
 		for i := 0; i < 8; i++ {
 			state[i] = L[i]
@@ -188,14 +120,13 @@ func (w *whirlpool) Write(source []byte) (int, error) {
 		sourcePos  int                                            // index of the leftmost source
 		nn         int    = len(source)                           // num of bytes to process
 		sourceBits uint64 = uint64(nn * 8)                        // num of bits to process
-		value      uint64 = sourceBits                            // value
 		sourceGap  uint   = uint((8 - (int(sourceBits & 7))) & 7) // space on source[sourcePos]
 		bufferRem  uint   = uint(w.bufferBits & 7)                // occupied bits on buffer[bufferPos]
 		b          uint32                                         // current byte
 	)
 
 	// Tally the length of the data added.
-	for i, carry := 31, uint32(0); i >= 0 && (carry != 0 || value != 0); i-- {
+	for i, carry, value := 31, uint32(0), uint64(sourceBits); i >= 0 && (carry != 0 || value != 0); i-- {
 		carry += uint32(w.bitLength[i]) + (uint32(value & 0xff))
 		w.bitLength[i] = byte(carry)
 		carry >>= 8
