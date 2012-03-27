@@ -75,78 +75,78 @@ func (w *whirlpool) transform() {
 	// Iterate over all the rounds.
 	for r := 1; r <= rounds; r++ {
 		// Compute K^rounds from K^(rounds-1).
-		L[0] = C0[int(K[0]>>56)] ^
-			C1[int((K[7]>>48)&0xff)] ^
-			C2[int((K[6]>>40)&0xff)] ^
-			C3[int((K[5]>>32)&0xff)] ^
-			C4[int((K[4]>>24)&0xff)] ^
-			C5[int((K[3]>>16)&0xff)] ^
-			C6[int((K[2]>>8)&0xff)] ^
-			C7[int(K[1]&0xff)] ^
+		L[0] = C0[byte(K[0]>>56)] ^
+			C1[byte(K[7]>>48)] ^
+			C2[byte(K[6]>>40)] ^
+			C3[byte(K[5]>>32)] ^
+			C4[byte(K[4]>>24)] ^
+			C5[byte(K[3]>>16)] ^
+			C6[byte(K[2]>>8)] ^
+			C7[byte(K[1])] ^
 			rc[r]
 
-		L[1] = C0[int(K[1]>>56)] ^
-			C1[int((K[0]>>48)&0xff)] ^
-			C2[int((K[7]>>40)&0xff)] ^
-			C3[int((K[6]>>32)&0xff)] ^
-			C4[int((K[5]>>24)&0xff)] ^
-			C5[int((K[4]>>16)&0xff)] ^
-			C6[int((K[3]>>8)&0xff)] ^
-			C7[int(K[2]&0xff)]
+		L[1] = C0[byte(K[1]>>56)] ^
+			C1[byte(K[0]>>48)] ^
+			C2[byte(K[7]>>40)] ^
+			C3[byte(K[6]>>32)] ^
+			C4[byte(K[5]>>24)] ^
+			C5[byte(K[4]>>16)] ^
+			C6[byte(K[3]>>8)] ^
+			C7[byte(K[2])]
 
-		L[2] = C0[int(K[2]>>56)] ^
-			C1[int((K[1]>>48)&0xff)] ^
-			C2[int((K[0]>>40)&0xff)] ^
-			C3[int((K[7]>>32)&0xff)] ^
-			C4[int((K[6]>>24)&0xff)] ^
-			C5[int((K[5]>>16)&0xff)] ^
-			C6[int((K[4]>>8)&0xff)] ^
-			C7[int(K[3]&0xff)]
+		L[2] = C0[byte(K[2]>>56)] ^
+			C1[byte(K[1]>>48)] ^
+			C2[byte(K[0]>>40)] ^
+			C3[byte(K[7]>>32)] ^
+			C4[byte(K[6]>>24)] ^
+			C5[byte(K[5]>>16)] ^
+			C6[byte(K[4]>>8)] ^
+			C7[byte(K[3])]
 
-		L[3] = C0[int(K[3]>>56)] ^
-			C1[int((K[2]>>48)&0xff)] ^
-			C2[int((K[1]>>40)&0xff)] ^
-			C3[int((K[0]>>32)&0xff)] ^
-			C4[int((K[7]>>24)&0xff)] ^
-			C5[int((K[6]>>16)&0xff)] ^
-			C6[int((K[5]>>8)&0xff)] ^
-			C7[int(K[4]&0xff)]
+		L[3] = C0[byte(K[3]>>56)] ^
+			C1[byte(K[2]>>48)] ^
+			C2[byte(K[1]>>40)] ^
+			C3[byte(K[0]>>32)] ^
+			C4[byte(K[7]>>24)] ^
+			C5[byte(K[6]>>16)] ^
+			C6[byte(K[5]>>8)] ^
+			C7[byte(K[4])]
 
-		L[4] = C0[int(K[4]>>56)] ^
-			C1[int((K[3]>>48)&0xff)] ^
-			C2[int((K[2]>>40)&0xff)] ^
-			C3[int((K[1]>>32)&0xff)] ^
-			C4[int((K[0]>>24)&0xff)] ^
-			C5[int((K[7]>>16)&0xff)] ^
-			C6[int((K[6]>>8)&0xff)] ^
-			C7[int(K[5]&0xff)]
+		L[4] = C0[byte(K[4]>>56)] ^
+			C1[byte(K[3]>>48)] ^
+			C2[byte(K[2]>>40)] ^
+			C3[byte(K[1]>>32)] ^
+			C4[byte(K[0]>>24)] ^
+			C5[byte(K[7]>>16)] ^
+			C6[byte(K[6]>>8)] ^
+			C7[byte(K[5])]
 
-		L[5] = C0[int(K[5]>>56)] ^
-			C1[int((K[4]>>48)&0xff)] ^
-			C2[int((K[3]>>40)&0xff)] ^
-			C3[int((K[2]>>32)&0xff)] ^
-			C4[int((K[1]>>24)&0xff)] ^
-			C5[int((K[0]>>16)&0xff)] ^
-			C6[int((K[7]>>8)&0xff)] ^
-			C7[int(K[6]&0xff)]
+		L[5] = C0[byte(K[5]>>56)] ^
+			C1[byte(K[4]>>48)] ^
+			C2[byte(K[3]>>40)] ^
+			C3[byte(K[2]>>32)] ^
+			C4[byte(K[1]>>24)] ^
+			C5[byte(K[0]>>16)] ^
+			C6[byte(K[7]>>8)] ^
+			C7[byte(K[6])]
 
-		L[6] = C0[int(K[6]>>56)] ^
-			C1[int((K[5]>>48)&0xff)] ^
-			C2[int((K[4]>>40)&0xff)] ^
-			C3[int((K[3]>>32)&0xff)] ^
-			C4[int((K[2]>>24)&0xff)] ^
-			C5[int((K[1]>>16)&0xff)] ^
-			C6[int((K[0]>>8)&0xff)] ^
-			C7[int(K[7]&0xff)]
+		L[6] = C0[byte(K[6]>>56)] ^
+			C1[byte(K[5]>>48)] ^
+			C2[byte(K[4]>>40)] ^
+			C3[byte(K[3]>>32)] ^
+			C4[byte(K[2]>>24)] ^
+			C5[byte(K[1]>>16)] ^
+			C6[byte(K[0]>>8)] ^
+			C7[byte(K[7])]
 
-		L[7] = C0[int(K[7]>>56)] ^
-			C1[int((K[6]>>48)&0xff)] ^
-			C2[int((K[5]>>40)&0xff)] ^
-			C3[int((K[4]>>32)&0xff)] ^
-			C4[int((K[3]>>24)&0xff)] ^
-			C5[int((K[2]>>16)&0xff)] ^
-			C6[int((K[1]>>8)&0xff)] ^
-			C7[int(K[0]&0xff)]
+		L[7] = C0[byte(K[7]>>56)] ^
+			C1[byte(K[6]>>48)] ^
+			C2[byte(K[5]>>40)] ^
+			C3[byte(K[4]>>32)] ^
+			C4[byte(K[3]>>24)] ^
+			C5[byte(K[2]>>16)] ^
+			C6[byte(K[1]>>8)] ^
+			C7[byte(K[0])]
 
 		for i := 0; i < 8; i++ {
 			K[i] = L[i]
