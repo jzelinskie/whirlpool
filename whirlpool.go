@@ -9,6 +9,7 @@
 package whirlpool
 
 import (
+	"encoding/binary"
 	"hash"
 )
 
@@ -56,14 +57,7 @@ func (w *whirlpool) transform() {
 	// Map the buffer to a block.
 	for i := 0; i < 8; i++ {
 		b := 8 * i
-		block[i] = ((uint64(w.buffer[b]) << 56) ^
-			(uint64(w.buffer[b+1]) & 0xff << 48) ^
-			(uint64(w.buffer[b+2]) & 0xff << 40) ^
-			(uint64(w.buffer[b+3]) & 0xff << 32) ^
-			(uint64(w.buffer[b+4]) & 0xff << 24) ^
-			(uint64(w.buffer[b+5]) & 0xff << 16) ^
-			(uint64(w.buffer[b+6]) & 0xff << 8) ^
-			(uint64(w.buffer[b+7]) & 0xff))
+		block[i] = binary.BigEndian.Uint64(w.buffer[b:])
 	}
 
 	// Compute & apply K^0 to the cipher state.
