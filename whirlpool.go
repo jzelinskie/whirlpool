@@ -75,78 +75,17 @@ func (w *whirlpool) transform() {
 	// Iterate over all the rounds.
 	for r := 1; r <= rounds; r++ {
 		// Compute K^rounds from K^(rounds-1).
-		L[0] = C0[byte(K[0]>>56)] ^
-			C1[byte(K[7]>>48)] ^
-			C2[byte(K[6]>>40)] ^
-			C3[byte(K[5]>>32)] ^
-			C4[byte(K[4]>>24)] ^
-			C5[byte(K[3]>>16)] ^
-			C6[byte(K[2]>>8)] ^
-			C7[byte(K[1])] ^
-			rc[r]
-
-		L[1] = C0[byte(K[1]>>56)] ^
-			C1[byte(K[0]>>48)] ^
-			C2[byte(K[7]>>40)] ^
-			C3[byte(K[6]>>32)] ^
-			C4[byte(K[5]>>24)] ^
-			C5[byte(K[4]>>16)] ^
-			C6[byte(K[3]>>8)] ^
-			C7[byte(K[2])]
-
-		L[2] = C0[byte(K[2]>>56)] ^
-			C1[byte(K[1]>>48)] ^
-			C2[byte(K[0]>>40)] ^
-			C3[byte(K[7]>>32)] ^
-			C4[byte(K[6]>>24)] ^
-			C5[byte(K[5]>>16)] ^
-			C6[byte(K[4]>>8)] ^
-			C7[byte(K[3])]
-
-		L[3] = C0[byte(K[3]>>56)] ^
-			C1[byte(K[2]>>48)] ^
-			C2[byte(K[1]>>40)] ^
-			C3[byte(K[0]>>32)] ^
-			C4[byte(K[7]>>24)] ^
-			C5[byte(K[6]>>16)] ^
-			C6[byte(K[5]>>8)] ^
-			C7[byte(K[4])]
-
-		L[4] = C0[byte(K[4]>>56)] ^
-			C1[byte(K[3]>>48)] ^
-			C2[byte(K[2]>>40)] ^
-			C3[byte(K[1]>>32)] ^
-			C4[byte(K[0]>>24)] ^
-			C5[byte(K[7]>>16)] ^
-			C6[byte(K[6]>>8)] ^
-			C7[byte(K[5])]
-
-		L[5] = C0[byte(K[5]>>56)] ^
-			C1[byte(K[4]>>48)] ^
-			C2[byte(K[3]>>40)] ^
-			C3[byte(K[2]>>32)] ^
-			C4[byte(K[1]>>24)] ^
-			C5[byte(K[0]>>16)] ^
-			C6[byte(K[7]>>8)] ^
-			C7[byte(K[6])]
-
-		L[6] = C0[byte(K[6]>>56)] ^
-			C1[byte(K[5]>>48)] ^
-			C2[byte(K[4]>>40)] ^
-			C3[byte(K[3]>>32)] ^
-			C4[byte(K[2]>>24)] ^
-			C5[byte(K[1]>>16)] ^
-			C6[byte(K[0]>>8)] ^
-			C7[byte(K[7])]
-
-		L[7] = C0[byte(K[7]>>56)] ^
-			C1[byte(K[6]>>48)] ^
-			C2[byte(K[5]>>40)] ^
-			C3[byte(K[4]>>32)] ^
-			C4[byte(K[3]>>24)] ^
-			C5[byte(K[2]>>16)] ^
-			C6[byte(K[1]>>8)] ^
-			C7[byte(K[0])]
+		for i := 0; i < 8; i++ {
+			L[i] = C0[byte(K[i%8]>>56)] ^
+				C1[byte(K[(i+7)%8]>>48)] ^
+				C2[byte(K[(i+6)%8]>>40)] ^
+				C3[byte(K[(i+5)%8]>>32)] ^
+				C4[byte(K[(i+4)%8]>>24)] ^
+				C5[byte(K[(i+3)%8]>>16)] ^
+				C6[byte(K[(i+2)%8]>>8)] ^
+				C7[byte(K[(i+1)%8])]
+		}
+		L[0] ^= rc[r]
 
 		for i := 0; i < 8; i++ {
 			K[i] = L[i]
