@@ -1,4 +1,10 @@
-package whirlpool
+// Copyright 2012 Jimmy Zelinskie. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Package whirlpool implements the ISO/IEC 10118-3:2004 whirlpool
+// cryptographic hash. Whirlpool is defined in
+// http://www.larc.usp.br/~pbarreto/WhirlpoolPage.html
 
 import (
 	"fmt"

@@ -1,3 +1,11 @@
+// Copyright 2012 Jimmy Zelinskie. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Package whirlpool implements the ISO/IEC 10118-3:2004 whirlpool
+// cryptographic hash. Whirlpool is defined in
+// http://www.larc.usp.br/~pbarreto/WhirlpoolPage.html
+
 package whirlpool
 
 import (
@@ -5,28 +13,27 @@ import (
 )
 
 type whirlpool struct {
-	bitLength  [lengthBytes]byte       // number of hashed bits
-	buffer     [wblockBytes]byte       // buffer of data to be hashed
-	bufferBits int                     // current number of bits on the buffer
-	bufferPos  int                     // current byte location on buffer
-	hash       [digestBytes / 8]uint64 // hash state
+	bitLength  [lengthBytes]byte       // Number of hashed bits.
+	buffer     [wblockBytes]byte       // Buffer of data to be hashed.
+	bufferBits int                     // Current number of bits on the buffer.
+	bufferPos  int                     // Current byte location on buffer.
+	hash       [digestBytes / 8]uint64 // Hash state.
 }
 
 func New() hash.Hash {
-	d := new(whirlpool)
-	return d
+	return new(whirlpool)
 }
 
 func (w *whirlpool) Reset() {
-	// cleanup buffer
+	// Cleanup the buffer.
 	w.buffer = [wblockBytes]byte{}
 	w.bufferBits = 0
 	w.bufferPos = 0
 
-	// cleanup digest
+	// Cleanup the digest.
 	w.hash = [digestBytes / 8]uint64{}
 
-	// clean number of hashed bits
+	// Clean up the number of hashed bits.
 	w.bitLength = [lengthBytes]byte{}
 }
 
@@ -40,13 +47,13 @@ func (w *whirlpool) BlockSize() int {
 
 func (w *whirlpool) transform() {
 	var (
-		K     [8]uint64 // round key
-		block [8]uint64 // mu(buffer)
-		state [8]uint64 // cipher state
+		K     [8]uint64 // Round key.
+		block [8]uint64 // Mu(buffer).
+		state [8]uint64 // Cipher state.
 		L     [8]uint64
 	)
 
-	// map buffer to a block
+	// Map the buffer to a block.
 	for i := 0; i < 8; i++ {
 		b := 8 * i
 		block[i] = ((uint64(w.buffer[b]) << 56) ^
@@ -59,15 +66,15 @@ func (w *whirlpool) transform() {
 			(uint64(w.buffer[b+7]) & 0xff))
 	}
 
-	// compute & apply K^0 to cipher state
+	// Compute & apply K^0 to the cipher state.
 	for i := 0; i < 8; i++ {
 		K[i] = w.hash[i]
 		state[i] = block[i] ^ K[i]
 	}
 
-	// iterate over all rounds
+	// Iterate over all the rounds.
 	for r := 1; r <= rounds; r++ {
-		// compute K^rounds from K^(rounds-1)
+		// Compute K^rounds from K^(rounds-1).
 		L[0] = C0[int(K[0]>>56)] ^
 			C1[int((K[7]>>48)&0xff)] ^
 			C2[int((K[6]>>40)&0xff)] ^
@@ -145,7 +152,7 @@ func (w *whirlpool) transform() {
 			K[i] = L[i]
 		}
 
-		// apply r-th round transformation
+		// Apply r-th round transformation.
 		L[0] = C0[int(state[0]>>56)] ^
 			C1[int((state[7]>>48)&0xff)] ^
 			C2[int((state[6]>>40)&0xff)] ^
@@ -231,7 +238,7 @@ func (w *whirlpool) transform() {
 		}
 	}
 
-	// apply miyaguchi-preneel compression function
+	// Apply the Miyaguchi-Preneel compression function.
 	for i := 0; i < 8; i++ {
 		w.hash[i] ^= state[i] ^ block[i]
 	}
@@ -248,7 +255,7 @@ func (w *whirlpool) Write(source []byte) (int, error) {
 		b          uint32                                         // current byte
 	)
 
-	// tally length of data added
+	// Tally the length of the data added.
 	for i, carry := 31, uint32(0); i >= 0 && (carry != 0 || value != 0); i-- {
 		carry += uint32(w.bitLength[i]) + (uint32(value & 0xff))
 		w.bitLength[i] = byte(carry)
@@ -256,56 +263,56 @@ func (w *whirlpool) Write(source []byte) (int, error) {
 		value >>= 8
 	}
 
-	// process data in chunks of 8 bits
+	// Process data in chunks of 8 bits.
 	for sourceBits > 8 {
-		// take a byte form the source
+		// Take a byte form the source.
 		b = uint32(((source[sourcePos] << sourceGap) & 0xff) |
 			((source[sourcePos+1] & 0xff) >> (8 - sourceGap)))
 
-		// process this byte
+		// Process this byte.
 		w.buffer[w.bufferPos] |= uint8(b >> bufferRem)
 		w.bufferPos++
 		w.bufferBits += int(8 - bufferRem)
 
 		if w.bufferBits == digestBits {
-			// process this block
+			// Process this block.
 			w.transform()
-			// reset the buffer
+			// Reset the buffer.
 			w.bufferBits = 0
 			w.bufferPos = 0
 		}
 		w.buffer[w.bufferPos] = byte(b << (8 - bufferRem))
 		w.bufferBits += int(bufferRem)
 
-		// proceed to remaining data
+		// Proceed to remaining data.
 		sourceBits -= 8
 		sourcePos++
 	}
 
-	// 0 <= sourceBits <= 8; all data leftover is in source[sourcePos]
+	// 0 <= sourceBits <= 8; All data leftover is in source[sourcePos].
 	if sourceBits > 0 {
 		b = uint32((source[sourcePos] << sourceGap) & 0xff) // bits are left-justified
 
-		// process remaining bits
+		// Process the remaining bits.
 		w.buffer[w.bufferPos] |= byte(b) >> bufferRem
 	} else {
 		b = 0
 	}
 
 	if uint64(bufferRem)+sourceBits < 8 {
-		// remaining data fits on buffer[bufferPos]
+		// The remaining data fits on the buffer[bufferPos].
 		w.bufferBits += int(sourceBits)
 	} else {
-		// buffer[bufferPos] is full
+		// The buffer[bufferPos] is full.
 		w.bufferPos++
 		w.bufferBits += 8 - int(bufferRem) // bufferBits = 8*bufferPos
 		sourceBits -= uint64(8 - bufferRem)
 
-		// now 0 <= sourceBits <= 8; all data leftover is in source[sourcePos]
+		// Now, 0 <= sourceBits <= 8; all data leftover is in source[sourcePos].
 		if w.bufferBits == digestBits {
-			// process data block
+			// Process this data block.
 			w.transform()
-			// reset buffer
+			// Reset buffer.
 			w.bufferBits = 0
 			w.bufferPos = 0
 		}
@@ -316,23 +323,23 @@ func (w *whirlpool) Write(source []byte) (int, error) {
 }
 
 func (w *whirlpool) Sum(in []byte) []byte {
-	// copy the whirlpool so that the caller can keep summing
+	// Copy the whirlpool so that the caller can keep summing.
 	n := *w
 
-	// append a 1-bit
+	// Append a 1-bit.
 	n.buffer[n.bufferPos] |= 0x80 >> (uint(n.bufferBits) & 7)
-	n.bufferPos++ // remaining bits are left 0
+	n.bufferPos++
 
-	// pad with 0s to complete
+	// The remaining bits should be 0. Pad with 0s to be complete.
 	if n.bufferPos > wblockBytes-lengthBytes {
 		if n.bufferPos < wblockBytes {
 			for i := 0; i < wblockBytes-n.bufferPos; i++ {
 				n.buffer[n.bufferPos+i] = 0
 			}
 		}
-		// process data block
+		// Process this data block.
 		n.transform()
-		// reset buffer
+		// Reset the buffer.
 		n.bufferPos = 0
 	}
 
@@ -343,15 +350,15 @@ func (w *whirlpool) Sum(in []byte) []byte {
 	}
 	n.bufferPos = wblockBytes - lengthBytes
 
-	// append bit length of hashed data
+	// Append the bit length of the hashed data.
 	for i := 0; i < lengthBytes; i++ {
 		n.buffer[n.bufferPos+i] = n.bitLength[i]
 	}
 
-	// process data block
+	// Process this data block.
 	n.transform()
 
-	// return the final digest as []byte
+	// Return the final digest as []byte.
 	var digest [digestBytes]byte
 	for i := 0; i < digestBytes/8; i++ {
 		digest[i*8] = byte(n.hash[i] >> 56)

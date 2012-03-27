@@ -3,10 +3,10 @@ a whirlpool hashing library for go
 
 ## progress
 
-[x] works
+[x] works to my standards
 
-[ ] 100% reviewed
+[ ] reviewed by expert cryptographer
 
 ## license
 
-none yet
+Modified BSD License
