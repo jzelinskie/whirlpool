@@ -111,12 +111,12 @@ func (w *whirlpool) transform() {
 
 func (w *whirlpool) Write(source []byte) (int, error) {
 	var (
-		sourcePos  int                                            // index of the leftmost source
-		nn         int    = len(source)                           // num of bytes to process
-		sourceBits uint64 = uint64(nn * 8)                        // num of bits to process
-		sourceGap  uint   = uint((8 - (int(sourceBits & 7))) & 7) // space on source[sourcePos]
-		bufferRem  uint   = uint(w.bufferBits & 7)                // occupied bits on buffer[bufferPos]
-		b          uint32                                         // current byte
+		sourcePos  int                                            // Index of the leftmost source.
+		nn         int    = len(source)                           // Num of bytes to process.
+		sourceBits uint64 = uint64(nn * 8)                        // Num of bits to process.
+		sourceGap  uint   = uint((8 - (int(sourceBits & 7))) & 7) // Space on source[sourcePos].
+		bufferRem  uint   = uint(w.bufferBits & 7)                // Occupied bits on buffer[bufferPos].
+		b          uint32                                         // Current byte.
 	)
 
 	// Tally the length of the data added.
