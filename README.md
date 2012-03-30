@@ -3,9 +3,9 @@ a [whirlpool hashing](https://en.wikipedia.org/wiki/Whirlpool_(cryptography\)) l
 
 ## progress
 
-[x] works to my standards
+☑ works to my standards
 
-[ ] reviewed by expert cryptographer
+☐ reviewed by expert cryptographer
 
 ## branches
 
