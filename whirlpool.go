@@ -49,7 +49,7 @@ func (w *whirlpool) BlockSize() int {
 func (w *whirlpool) transform() {
 	var (
 		K     [8]uint64 // Round key.
-		block [8]uint64 // Mu(buffer).
+		block [8]uint64 // μ(buffer).
 		state [8]uint64 // Cipher state.
 		L     [8]uint64
 	)
