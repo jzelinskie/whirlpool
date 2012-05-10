@@ -1,11 +1,29 @@
 #whirlpool.go
 a [whirlpool hashing](https://en.wikipedia.org/wiki/Whirlpool_(cryptography\)) library for go
 
-## progress
+## setup
 
-☑ works to my standards
+`go get github.com/jzelinskie/whirlpool` in a terminal
 
-☐ reviewed by expert cryptographer
+or simply
+`import github.com/jzelinskie/whirlpool` in your code
+
+
+## example
+
+     package main
+
+     import (
+       "fmt"
+       "github.com/jzelinskie/whirlpool"
+     )
+     
+     func main() {
+       w := whirlpool.New()
+       text := []byte("This is an example.")
+       w.Write(text)
+       fmt.Println(w.Sum(nil))
+     }
 
 ## branches
 
