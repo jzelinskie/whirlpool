@@ -72,14 +72,14 @@ func (w *whirlpool) transform() {
 	for r := 1; r <= rounds; r++ {
 		// Compute K^rounds from K^(rounds-1).
 		for i := 0; i < 8; i++ {
-			L[i] = C0[byte(K[i%8]>>56)] ^
-				C1[byte(K[(i+7)%8]>>48)] ^
-				C2[byte(K[(i+6)%8]>>40)] ^
-				C3[byte(K[(i+5)%8]>>32)] ^
-				C4[byte(K[(i+4)%8]>>24)] ^
-				C5[byte(K[(i+3)%8]>>16)] ^
-				C6[byte(K[(i+2)%8]>>8)] ^
-				C7[byte(K[(i+1)%8])]
+			L[i] = _C0[byte(K[i%8]>>56)] ^
+				_C1[byte(K[(i+7)%8]>>48)] ^
+				_C2[byte(K[(i+6)%8]>>40)] ^
+				_C3[byte(K[(i+5)%8]>>32)] ^
+				_C4[byte(K[(i+4)%8]>>24)] ^
+				_C5[byte(K[(i+3)%8]>>16)] ^
+				_C6[byte(K[(i+2)%8]>>8)] ^
+				_C7[byte(K[(i+1)%8])]
 		}
 		L[0] ^= rc[r]
 
@@ -89,14 +89,14 @@ func (w *whirlpool) transform() {
 
 		// Apply r-th round transformation.
 		for i := 0; i < 8; i++ {
-			L[i] = C0[byte(state[i%8]>>56)] ^
-				C1[byte(state[(i+7)%8]>>48)] ^
-				C2[byte(state[(i+6)%8]>>40)] ^
-				C3[byte(state[(i+5)%8]>>32)] ^
-				C4[byte(state[(i+4)%8]>>24)] ^
-				C5[byte(state[(i+3)%8]>>16)] ^
-				C6[byte(state[(i+2)%8]>>8)] ^
-				C7[byte(state[(i+1)%8])] ^
+			L[i] = _C0[byte(state[i%8]>>56)] ^
+				_C1[byte(state[(i+7)%8]>>48)] ^
+				_C2[byte(state[(i+6)%8]>>40)] ^
+				_C3[byte(state[(i+5)%8]>>32)] ^
+				_C4[byte(state[(i+4)%8]>>24)] ^
+				_C5[byte(state[(i+3)%8]>>16)] ^
+				_C6[byte(state[(i+2)%8]>>8)] ^
+				_C7[byte(state[(i+1)%8])] ^
 				K[i%8]
 		}
 
