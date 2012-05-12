@@ -13,6 +13,7 @@ import (
 	"hash"
 )
 
+// whirlpool represents the partial evaluation of a checksum.
 type whirlpool struct {
 	bitLength  [lengthBytes]byte       // Number of hashed bits.
 	buffer     [wblockBytes]byte       // Buffer of data to be hashed.
@@ -21,6 +22,7 @@ type whirlpool struct {
 	hash       [digestBytes / 8]uint64 // Hash state.
 }
 
+// New returns a new hash.Hash computing the whirlpool checksum.
 func New() hash.Hash {
 	return new(whirlpool)
 }
@@ -155,7 +157,7 @@ func (w *whirlpool) Write(source []byte) (int, error) {
 
 	// 0 <= sourceBits <= 8; All data leftover is in source[sourcePos].
 	if sourceBits > 0 {
-		b = uint32((source[sourcePos] << sourceGap) & 0xff) // bits are left-justified
+		b = uint32((source[sourcePos] << sourceGap) & 0xff) // The bits are left-justified.
 
 		// Process the remaining bits.
 		w.buffer[w.bufferPos] |= byte(b) >> bufferRem
