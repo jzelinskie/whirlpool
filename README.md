@@ -25,6 +25,10 @@ or simply
       fmt.Println(w.Sum(nil))
     }
 
+## docs
+
+checkout the [gopkgdoc page](http://go.pkgdoc.org/github.com/jzelinskie/whirlpool), but there isn't much -- it works just like the other hashes in the standard library
+
 ## branches
 
 * master - stable, works like the hash libs in the corelib
