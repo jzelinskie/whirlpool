@@ -1,6 +1,10 @@
 #whirlpool.go
 a [whirlpool hashing](https://en.wikipedia.org/wiki/Whirlpool_(cryptography\)) library for go
 
+## build status
+
+[![Build Status](https://secure.travis-ci.org/jzelinskie/whirlpool.png)](http://travis-ci.org/jzelinskie/whirlpool)
+
 ## setup
 
 ```bash
