@@ -2,12 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package whirlpool
+package whirlpool_test
 
 import (
 	"fmt"
 	"io"
 	"testing"
+
+	"github.com/jzelinskie/whirlpool"
 )
 
 type whirlpoolTest struct {
@@ -52,7 +54,7 @@ var golden = []whirlpoolTest{
 func TestGolden(t *testing.T) {
 	for i := 0; i < len(golden); i++ {
 		g := golden[i]
-		c := New()
+		c := whirlpool.New()
 		for j := 0; j < 3; j++ {
 			if j < 2 {
 				io.WriteString(c, g.in)
